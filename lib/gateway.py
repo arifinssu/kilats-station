@@ -7,12 +7,6 @@ device = mqtt.Client(clientid)
 topic = f'kilats/v1/{clientid}/'
 isConnected = False
 
-config = {
-    'mqtt_host': "147.139.166.233",
-    'mqtt_port': 4118,
-    'mqtt_uname': "kilatsdevicex",
-    'mqtt_pass': "Mac57588."}
-
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         global isConnected

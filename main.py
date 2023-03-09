@@ -7,7 +7,7 @@ kilats project monstermac, kilats-station section.
 from api import app
 from lib import gateway
 from lib import batteries
-from lib.utils import (millis, delay)
+from lib.utils import (millis, delay, mqtt_config)
 
 import minimalmodbus
 import json
@@ -18,8 +18,8 @@ import logging
 def main():
     gateway.device.on_connect = gateway.on_connect
     gateway.device.on_disconnect = gateway.on_disconnect
-    gateway.device.username_pw_set(gateway.config['mqtt_uname'], gateway.config['mqtt_pass'])
-    gateway.device.connect(gateway.config['mqtt_host'], gateway.config['mqtt_port'])
+    gateway.device.username_pw_set(mqtt_config['user'], mqtt_config['pass'])
+    gateway.device.connect(mqtt_config['host'], mqtt_config['port'])
     gateway.device.loop_start()
 
     rack = batteries.start_racks(11, "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0", 19200)

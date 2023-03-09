@@ -4,6 +4,12 @@ from ctypes import c_long
 clientid = "KILATSDEVX-C0032"
 HREG_TOTAL = 23
 
+mqtt_config = {
+    'host': "147.139.166.233",
+    'port': 4118,
+    'user': "kilatsdevicex",
+    'pass': "Mac57588."}
+
 class Timer():
     def __init__(self):
         self._timestamp = 0
