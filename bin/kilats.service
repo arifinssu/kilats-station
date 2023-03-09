@@ -1,0 +1,15 @@
+[Unit]
+Description=running kilats-station
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/home/macdev/kilats-station/env/bin/python3 /home/macdev/kilats-station/main.py
+WorkingDirectory=/home/macdev/kilats-station
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=macdev
+ 
+[Install]
+WantedBy=multi-user.target

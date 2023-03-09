@@ -1,34 +1,51 @@
 from . import gateway
-from .utils import (millis, uint16_to_int16, delay, from16to32)
+from .utils import (millis, uint16_to_int16, delay, from16to32, HREG_TOTAL)
 
 import minimalmodbus
 from json import dumps
 
+first_rack = 0
+racks = []
+
 def instrument(address, baud, port, closePort=True):
     device = minimalmodbus.Instrument(port, address)
     device.serial.baudrate = baud
-    device.serial.timeout  = 0.05
+    device.serial.timeout  = .1
     device.close_port_after_each_call = closePort
     return device
 
-def shelfes(port, baud):
+def start_racks(start, port, baud):
+    global first_rack
+    first_rack = start
+
     addresses = []
-    for i in range(200):
-        i = instrument(i, baud, port)
+    for i in range(32):
+        i = instrument(start + i, baud, port)
         try: 
             i.read_registers(0, 23)
+            i.serial.timeout = 1
+            print(i)
             addresses.append(i)
         except: del i
-    
+        delay(50)
+
+    global racks
+    racks = addresses
     return addresses
 
-def find_shelfes(shelf):
-    try: return shelf.address
+def find_racks(rack):
+    try: return (rack.address - first_rack) + 1
     except: return None
 
-def get_data(shelf):
-    try: data = shelf.read_registers(0, 23)
-    except: data = [0] * 23
+def get_data(rack):
+    try: 
+        data = rack.read_registers(0, 23)
+        port_connect = True
+    except Exception as e: 
+        # print(f"device {rack.address} disconnected. {e}")
+        # delay(1000)
+        port_connect = False
+        data = [0] * 23
 
     batt_id = from16to32(data[0], data[1])
     batt_current = uint16_to_int16(data[2]) / 10
@@ -51,11 +68,7 @@ def get_data(shelf):
         'voltage': batt_voltage,
         'cells': batt_cells,
         'door': door_status, 
-        'curr_charge': current_charge})
+        'curr_charge': current_charge,
+        'port_connect': port_connect})
 
     return result
-
-if __name__ == '__main__':
-    x = shelfes("/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0671FF515349836687012759-if02", 19200)
-    print(len(x))
-    print(find_shelfes(x[0]))

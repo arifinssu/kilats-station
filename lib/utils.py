@@ -1,6 +1,9 @@
 import time
 from ctypes import c_long
 
+clientid = "KILATSDEVX-C0032"
+HREG_TOTAL = 23
+
 class Timer():
     def __init__(self):
         self._timestamp = 0

@@ -1,12 +1,11 @@
+from . import batteries
+from .utils import clientid
+
 import paho.mqtt.client as mqtt
 
-id_rack = 1
-clientid = "KILATSDEVX-C0001"
 device = mqtt.Client(clientid)
-
 topic = f'kilats/v1/{clientid}/'
 isConnected = False
-isOpen = False
 
 config = {
     'mqtt_host': "147.139.166.233",
@@ -24,11 +23,18 @@ def on_connect(client, userdata, flags, rc):
             topicnya = msg.topic.replace(topic, '')
             payload = msg.payload.decode("utf-8")
 
-            if f'open/{id_rack}' in topicnya:
-                global isOpen
-                openkan = topicnya.replace(f'open/{id_rack}', '')
-                print("getopen")
-                isOpen = True
+            if "open/" in topicnya:
+                r = int(topicnya.replace("open/", ""))
+                for i in range(len(batteries.racks)):
+                    if int(r) == batteries.find_racks(batteries.racks[i]):
+                        for z in range(10):
+                            try:
+                                batteries.racks[i].write_register(21, 1)
+                                print(f"door open in rack {r} with rackid: {batteries.racks[i].address}")
+                                break
+                            except:
+                                continue
+                        break
 
         client.on_message = on_message
         client.subscribe(

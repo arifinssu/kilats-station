@@ -7,12 +7,13 @@ kilats project monstermac, kilats-station section.
 from api import app
 from lib import gateway
 from lib import batteries
-from lib.utils import (millis, uint16_to_int16, delay, from16to32)
+from lib.utils import (millis, delay)
 
 import minimalmodbus
 import json
 import threading
 import sys
+import logging
 
 def main():
     gateway.device.on_connect = gateway.on_connect
@@ -21,27 +22,37 @@ def main():
     gateway.device.connect(gateway.config['mqtt_host'], gateway.config['mqtt_port'])
     gateway.device.loop_start()
 
-    shelf = batteries.shelfes("/dev/serial/by-id/usb-STMicroelectronics_STM32_STLink_0671FF515349836687012759-if02", 19200)
+    rack = batteries.start_racks(11, "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0", 19200)
 
     next_loop = millis()
+    next_loop2 = millis()
 
     while True:
-        data = batteries.get_data(shelf[0])
-
         if millis() >= next_loop + 5000:
             next_loop = millis()
-            if gateway.isConnected:
-                gateway.device.publish(
-                    topic=f"{gateway.topic}data/{gateway.id_rack}", 
-                    payload=data,
-                    qos=2, 
-                    retain=False)
-            print(f"{millis()} - {data}")
+            
+            data = []
+            for i in rack:
+                data.append(batteries.get_data(i))
+                delay(50)
 
-        if gateway.isOpen:
-            print("door open send command")
-            device.write_register(21, 1)
-            gateway.isOpen = False
+            try:
+                if gateway.isConnected:
+                    gateway.device.publish(
+                        topic=f"{gateway.topic}data/{batteries.find_racks(rack[0])}", 
+                        payload=data[0],
+                        qos=2, 
+                        retain=False)
+
+                    gateway.device.publish(
+                        topic=f"{gateway.topic}data/{batteries.find_racks(rack[1])}", 
+                        payload=data[1],
+                        qos=2, 
+                        retain=False)
+                print(f"{millis()} - {data[0]}")
+                print(f"{millis()} - {data[1]}")
+                print()
+            except: pass
 
 if __name__ == '__main__':
     try:
