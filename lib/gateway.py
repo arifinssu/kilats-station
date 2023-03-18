@@ -21,7 +21,7 @@ def on_connect(client, userdata, flags, rc):
                 r = int(topicnya.replace("open/", ""))
                 for i in range(len(batteries.racks)):
                     if int(r) == batteries.find_racks(batteries.racks[i]):
-                        for z in range(10):
+                        for z in range(15):
                             try:
                                 batteries.racks[i].write_register(21, 1)
                                 print(f"door open in rack {r} with rackid: {batteries.racks[i].address}")

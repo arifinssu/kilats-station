@@ -16,6 +16,36 @@ import sys
 import logging
 
 def main():
+    # import minimalmodbus
+    # from time import sleep
+
+    # instrument = minimalmodbus.Instrument("/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0", 12)
+    # instrument.serial.baudrate = 19200
+    # instrument.serial.timeout  = 1
+
+    # sleep(2)
+
+    # while True:
+    #     data = None
+    #     success = False
+    #     for z in range(10):
+    #         try:
+    #             data = instrument.read_registers(0, 23)
+    #             # delay(100)
+    #             # data = instrument.read_register(5)
+    #             # delay(100)
+    #             # data = instrument.read_register(20)
+    #             delay(100)
+    #             success = True
+    #             break
+    #         except: continue
+
+    #     if not success: 
+    #         data = [0] * 23
+
+    #     print(data, success)
+    #     delay(1000)
+
     gateway.device.on_connect = gateway.on_connect
     gateway.device.on_disconnect = gateway.on_disconnect
     gateway.device.username_pw_set(mqtt_config['user'], mqtt_config['pass'])
@@ -28,13 +58,13 @@ def main():
     next_loop2 = millis()
 
     while True:
-        if millis() >= next_loop + 5000:
+        if millis() >= next_loop + 1000:
             next_loop = millis()
             
             data = []
             for i in rack:
                 data.append(batteries.get_data(i))
-                delay(50)
+                delay(100)
 
             try:
                 if gateway.isConnected:
@@ -45,12 +75,18 @@ def main():
                         retain=False)
 
                     gateway.device.publish(
-                        topic=f"{gateway.topic}data/{batteries.find_racks(rack[1])}", 
+                        topic=f"{gateway.topic}data/2", 
                         payload=data[1],
                         qos=2, 
                         retain=False)
+
+                    gateway.device.publish(
+                        topic=f"{gateway.topic}data/3", 
+                        payload=data[2],
+                        qos=2, 
+                        retain=False)
                 print(f"{millis()} - {data[0]}")
-                print(f"{millis()} - {data[1]}")
+                print(f"{millis()} - {data[2]}")
                 print()
             except: pass
 
