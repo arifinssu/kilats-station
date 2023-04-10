@@ -1,63 +1,58 @@
-__version__     = '0.1.0'
+__version__     = '0.2.1'
 __author__      = 'monstermac-rnd'
 __description__ = """
 kilats project monstermac, kilats-station section.
+- p2
                   """
 
 from api import app
 from lib import gateway
-from lib import batteries
-from lib.utils import (millis, delay, mqtt_config)
+from lib.timer import (Timer, millis, delay)
+from lib.utils import (mqtt_config, uport, ubaud, rack_slot, clientid, HREG_TOTAL)
+from lib.battery import battery
+from lib.gateway import gtwy
 
-import minimalmodbus
 import json
 import threading
 import sys
 import logging
 
 def main():
-    gateway.device.on_connect = gateway.on_connect
-    gateway.device.on_disconnect = gateway.on_disconnect
-    gateway.device.username_pw_set(mqtt_config['user'], mqtt_config['pass'])
-    gateway.device.connect(mqtt_config['host'], mqtt_config['port'])
-    gateway.device.loop_start()
+    gateway.start(
+        mqtt_config['user'],
+        mqtt_config['pass'],
+        mqtt_config['host'],
+        mqtt_config['port'])
 
-    rack = batteries.start_racks(11, "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0", 19200)
+    battery.config(uport, ubaud, 10)
+    battery.init()
+    battery_data_temp = [0] * battery.maks
 
-    next_loop = millis()
-    next_loop2 = millis()
+    dataloop = Timer()
+    dataloop.delay(1000)
 
     while True:
-        if millis() >= next_loop + 5000:
-            next_loop = millis()
-            
-            data = []
-            for i in rack:
-                data.append(batteries.get_data(i))
-                delay(50)
+        battery.update()
 
+        if dataloop.loop():
             try:
-                if gateway.isConnected:
-                    gateway.device.publish(
-                        topic=f"{gateway.topic}data/{batteries.find_racks(rack[0])}", 
-                        payload=data[0],
-                        qos=2, 
-                        retain=False)
+                for rack in range(len(battery.racks)):
+                    if battery.racks_data[rack] != battery_data_temp[rack]:
+                        battery_data_temp[rack] = battery.racks_data[rack]
+                        if gateway.isConnected:
+                            gateway.publish(
+                                topic = f"{gateway.topic}data/{rack+1}",
+                                payload = json.dumps(battery_data_temp[rack]))
 
-                    gateway.device.publish(
-                        topic=f"{gateway.topic}data/{batteries.find_racks(rack[1])}", 
-                        payload=data[1],
-                        qos=2, 
-                        retain=False)
-                print(f"{millis()} - {data[0]}")
-                print(f"{millis()} - {data[1]}")
-                print()
-            except: pass
+                        # print(f"{millis()} - {battery.racks_data[rack]} - {gateway.topic}data/{rack+1}")
+            except Exception as e: 
+                print(e)
+                pass
 
 if __name__ == '__main__':
     try:
         threading.Thread(
-            target=main, 
+            target=main,
             args=(), 
             daemon=True
         ).start()

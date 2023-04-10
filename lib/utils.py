@@ -1,8 +1,11 @@
-import time
 from ctypes import c_long
 
-clientid = "KILATSDEVX-C0032"
-HREG_TOTAL = 23
+uport = "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0"
+ubaud = 19200
+rack_slot = 10
+
+clientid = "KILATSDEVX-C1000"
+HREG_TOTAL = 16
 
 mqtt_config = {
     'host': "147.139.166.233",
@@ -10,29 +13,12 @@ mqtt_config = {
     'user': "kilatsdevicex",
     'pass': "Mac57588."}
 
-class Timer():
-    def __init__(self):
-        self._timestamp = 0
-        self._delay = 0
-
-    def timeout(self):
-        return ((millis() - self._timestamp) > self._delay)
-
-    def delay(self, delay):
-        self._timestamp = millis()
-        self._delay = delay
-
-def millis():
-    return round(time.time() * 1000)
-
-def delay(delay):
-    t0 = millis()
-    while (millis() - t0) < delay:
-        pass
-
 def uint16_to_int16(raw):
-    if raw > 32767: return (65536 - raw)
+    if raw > 32767: return (65535 - raw)
     return raw
 
 def from16to32(data16a, data16b):
-    return c_long((data16a << 16) | (data16b)).value
+    if data16a == 0 and data16b == 0: return 0
+    result = c_long((data16a << 16) | (data16b)).value
+    if result < 2147483647: return (result + 2147483647)
+    return result
