@@ -1,11 +1,12 @@
 from ctypes import c_long
 
-uport = "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0"
-ubaud = 19200
-rack_slot = 10
+# uport = "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0"
+# ubaud = 19200
+# rack_slot = 10
 
-clientid = "KILATSDEVX-C1000"
-HREG_TOTAL = 16
+# clientid = "KILATSDEVX-C1000"
+# RACK_HREG_TOTAL = 16
+# CABINET_HREG_TOTAL = 20
 
 mqtt_config = {
     'host': "147.139.166.233",

@@ -1,5 +1,5 @@
-from . import gateway
-from .utils import (uint16_to_int16, from16to32, HREG_TOTAL, uport)
+from .config import config
+from .utils import (uint16_to_int16, from16to32)
 from .timer import delay, millis
 
 import minimalmodbus
@@ -37,7 +37,7 @@ class BATTERY():
         for i in range(self.maks):
             address = instrument(i+1, self.baud, self.port)
             try: 
-                address.read_registers(0, HREG_TOTAL)
+                address.read_registers(0, int(config.read()['rack']['HREG_TOTAL']))
                 address.serial.timeout = 1
                 self.racks[i] = address
             except: del address
@@ -47,11 +47,11 @@ class BATTERY():
 
     def get_data(self, rack):
         try: 
-            batt_data = rack.read_registers(0, HREG_TOTAL)
+            batt_data = rack.read_registers(0, int(config.read()['rack']['HREG_TOTAL']))
             port_connect = "connected"
         except Exception as e:
             port_connect = "disconnected"
-            batt_data = [0] * HREG_TOTAL
+            batt_data = [0] * int(config.read()['rack']['HREG_TOTAL'])
 
         batt_id = from16to32(batt_data[0], batt_data[1])
         batt_current = uint16_to_int16(batt_data[2]) / 10
@@ -116,6 +116,8 @@ class BATTERY():
         # swap done
         self.swap = False
 
+        print(f"swapping process from {self.swap_from+1} to {self.swap_to+1} completed")
+
     def swapping(self, f, t):
         if self.is_swap(): return
         self.swap_from = f
@@ -123,6 +125,9 @@ class BATTERY():
         self.swap = True
         if self.swap:
             Thread(target=self.swap_process, args=(), daemon=True).start()
+
+    def set_swap(self, value):
+        self.swap = value
 
     def is_swap(self):
         return self.swap
@@ -137,6 +142,7 @@ class BATTERY():
         if self.open_racknum is not None:
             self.open_rack(self.open_racknum)
             self.open_racknum = None
+            delay(50)
 
         if self.trigger_limit is not None:
             data = self.trigger_limit.split("/")
@@ -144,6 +150,7 @@ class BATTERY():
             value = int(data[1])
             self.racks[racknum].write_register(14, value)
             self.trigger_limit = None
+            delay(50)
 
         if self.trigger_block is not None:
             data = self.trigger_block.split("/")
@@ -151,6 +158,7 @@ class BATTERY():
             value = int(data[1])
             self.racks[racknum].write_register(15, value)
             self.trigger_block = None
+            delay(50)
 
         for racknum in range(len(self.racks)):
             self.racks_data[racknum] = self.get_data(self.racks[racknum])
